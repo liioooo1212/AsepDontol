@@ -1,0 +1,199 @@
+-- LocalScript, taruh di StarterPlayerScripts (Roblox Studio, game kamu sendiri)
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AsepKontol"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- === Frame utama ===
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(220, 130)
+frame.Position = UDim2.new(0, 30, 0, 100)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+-- Shadow (glow)
+local shadow = Instance.new("ImageLabel")
+shadow.Name = "Shadow"
+shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+shadow.Size = UDim2.new(1, 40, 1, 40)
+shadow.BackgroundTransparency = 1
+shadow.ZIndex = 0
+shadow.Image = "rbxassetid://5028857084" -- blur glow asset
+shadow.ImageTransparency = 0.35
+shadow.ImageColor3 = Color3.fromRGB(0,0,0)
+shadow.ScaleType = Enum.ScaleType.Slice
+shadow.SliceCenter = Rect.new(24,24,276,276)
+shadow.Parent = frame
+
+-- Border rainbow
+local border = Instance.new("UIStroke")
+border.Thickness = 3
+border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+border.Parent = frame
+
+-- Animasi rainbow border
+task.spawn(function()
+	local hue = 0
+	while true do
+		hue = (hue + 0.002) % 1
+		border.Color = Color3.fromHSV(hue, 1, 1)
+		RunService.Heartbeat:Wait()
+	end
+end)
+
+-- === Title bar ===
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 28)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+titleBar.Parent = frame
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel")
+title.Text = "Asep Kontol"
+title.Size = UDim2.new(1, -60, 1, 0)
+title.Position = UDim2.fromOffset(8, 0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Text = "-"
+minimizeBtn.Size = UDim2.fromOffset(26, 22)
+minimizeBtn.Position = UDim2.new(1, -30, 0.5, -11)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+minimizeBtn.TextColor3 = Color3.new(1,1,1)
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 14
+minimizeBtn.Parent = titleBar
+Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0,6)
+
+-- === Content ===
+local content = Instance.new("Frame")
+content.Position = UDim2.new(0, 0, 0, 28)
+content.Size = UDim2.new(1, 0, 1, -28)
+content.BackgroundTransparency = 1
+content.Parent = frame
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Text = "Status: Idle"
+statusLabel.Size = UDim2.new(1, -10, 0, 20)
+statusLabel.Position = UDim2.fromOffset(5, 5)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.new(1,1,1)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 12
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = content
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Text = "OFF"
+toggleBtn.Size = UDim2.new(1, -10, 0, 30)
+toggleBtn.Position = UDim2.fromOffset(5, 35)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(130, 60, 60)
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 14
+toggleBtn.Parent = content
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 8)
+
+-- === Minimize logic (dengan animasi) ===
+local minimized = false
+minimizeBtn.MouseButton1Click:Connect(function()
+	if minimized then
+		content.Visible = true
+		TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.fromOffset(220, 130)}):Play()
+	else
+		content.Visible = false
+		TweenService:Create(frame, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.fromOffset(220, 28)}):Play()
+	end
+	minimized = not minimized
+end)
+
+-- === Waypoints ===
+local waypoints = {
+	{Vector3.new(313, 103, 155), 4},
+	{Vector3.new(90, 210, 406), 4},
+	{Vector3.new(-182, 521, 1105), 4},
+	{Vector3.new(-741, 501, 1125), 4},
+	{Vector3.new(125, 519, 1673), 4},
+	{Vector3.new(-359, 725, 2053), 4}, -- puncak
+}
+
+-- === Teleport logic ===
+local running = false
+local toggled = false
+
+local function setToggle(on)
+	toggled = on
+	if on then
+		toggleBtn.Text = "ON"
+		TweenService:Create(toggleBtn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(60, 120, 70)}):Play()
+	else
+		toggleBtn.Text = "OFF"
+		TweenService:Create(toggleBtn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(130, 60, 60)}):Play()
+	end
+end
+setToggle(false)
+
+local function respawnCharacter()
+	local char = player.Character
+	if char and char:FindFirstChildOfClass("Humanoid") then
+		char:FindFirstChildOfClass("Humanoid").Health = 0
+	end
+end
+
+local function runTeleport()
+	if running then return end
+	running = true
+	while toggled do
+		for i, wp in ipairs(waypoints) do
+			if not toggled then break end
+			statusLabel.Text = "Teleport ke titik " .. i
+			local char = player.Character or player.CharacterAdded:Wait()
+			local hrp = char:WaitForChild("HumanoidRootPart")
+			char:PivotTo(CFrame.new(wp[1] + Vector3.new(0,3,0)))
+			task.wait(wp[2])
+		end
+		if toggled then
+			statusLabel.Text = "Respawn..."
+			respawnCharacter()
+			player.CharacterAdded:Wait()
+			task.wait(1)
+		end
+	end
+	statusLabel.Text = "Idle"
+	running = false
+end
+
+-- Toggle button handler
+toggleBtn.MouseButton1Click:Connect(function()
+	if toggled then
+		setToggle(false)
+	else
+		setToggle(true)
+		task.spawn(runTeleport)
+	end
+end)
+
+-- Restart otomatis kalau respawn manual & toggle masih ON
+player.CharacterAdded:Connect(function()
+	if toggled then
+		task.wait(1)
+		task.spawn(runTeleport)
+	end
+end)
